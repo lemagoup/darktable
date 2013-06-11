@@ -87,6 +87,7 @@ typedef struct dt_library_t
   dt_view_image_over_t image_over;
   int full_preview;
   int32_t full_preview_id;
+  int32_t displayed_picture_id;
   gboolean offset_changed;
   GdkColor star_color;
   int images_in_row;
@@ -327,6 +328,7 @@ void init(dt_view_t *self)
   lib->full_preview = 0;
   lib->full_preview_id = -1;
   lib->last_mouse_over_id = -1;
+  lib->displayed_picture_id = -1;
 
   GtkStyle *style = gtk_rc_get_style_by_paths(gtk_settings_get_default(), "dt-stars", NULL, GTK_TYPE_NONE);
 
@@ -379,6 +381,7 @@ expose_filemanager (dt_view_t *self, cairo_t *cr, int32_t width, int32_t height,
 {
   dt_library_t *lib = (dt_library_t *)self->data;
 
+  lib->displayed_picture_id = -1;
   gboolean offset_changed = FALSE;
 
   /* query new collection count */
@@ -551,6 +554,7 @@ end_query_cache:
         cairo_save(cr);
         // if(iir == 1) dt_image_prefetch(image, DT_IMAGE_MIPF);
         dt_view_image_expose(&(lib->image_over), id, cr, wd, iir == 1 ? height : ht, iir, img_pointerx, img_pointery, FALSE);
+        if(iir == 1) lib->displayed_picture_id = id;
 
         cairo_restore(cr);
       }
@@ -780,6 +784,7 @@ expose_zoomable (dt_view_t *self, cairo_t *cr, int32_t width, int32_t height, in
   int32_t mouse_over_id, pan, track, center;
   /* query new collection count */
   lib->collection_count = dt_collection_get_count (darktable.collection);
+  lib->displayed_picture_id = -1;
 
   DT_CTL_GET_GLOBAL(mouse_over_id, lib_image_mouse_over_id);
   zoom   = dt_conf_get_int("plugins/lighttable/images_in_row");
@@ -961,6 +966,8 @@ expose_zoomable (dt_view_t *self, cairo_t *cr, int32_t width, int32_t height, in
         cairo_save(cr);
         // if(zoom == 1) dt_image_prefetch(image, DT_IMAGE_MIPF);
         dt_view_image_expose(&(lib->image_over), id, cr, wd, zoom == 1 ? height : ht, zoom, img_pointerx, img_pointery, FALSE);
+        if(zoom == 1) lib->displayed_picture_id = id;
+
         cairo_restore(cr);
       }
       else goto failure;
@@ -1090,6 +1097,11 @@ void expose(dt_view_t *self, cairo_t *cr, int32_t width, int32_t height, int32_t
         expose_zoomable(self, cr, width, height, pointerx, pointery);
         break;
     }
+    const int zoom = dt_conf_get_int("plugins/lighttable/images_in_row");
+
+    // filemanager mode zoom == 1 -> automatically select picture displayed on screen.
+    if(zoom == 1)
+        dt_selection_select_single(darktable.selection, lib->displayed_picture_id);
   }
   const double end = dt_get_wtime();
   if (darktable.unmuted & DT_DEBUG_PERF)
