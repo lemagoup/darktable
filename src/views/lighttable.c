@@ -1085,6 +1085,9 @@ void expose(dt_view_t *self, cairo_t *cr, int32_t width, int32_t height, int32_t
   if( lib->full_preview_id!=-1 )
   {
     expose_full_preview(self, cr, width, height, pointerx, pointery);
+
+    // full_preview mode -> automatically select full previewed picture.
+    dt_selection_select_single(darktable.selection, lib->full_preview_id);
   }
   else // we do pass on expose to manager or zoomable
   {
