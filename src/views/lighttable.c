@@ -92,6 +92,7 @@ typedef struct dt_library_t
   int images_in_row;
 
   int32_t last_mouse_over_id;
+  int32_t one_image_seen_id;
 
   int32_t collection_count;
 
@@ -302,6 +303,12 @@ static int _get_full_preview_id(dt_view_t *self)
   return lib->full_preview_id;
 }
 
+static int _get_one_image_seen_id(dt_view_t *self)
+{
+  dt_library_t *lib = (dt_library_t *)self->data;
+  return lib->one_image_seen_id;
+}
+
 void init(dt_view_t *self)
 {
   self->data = malloc(sizeof(dt_library_t));
@@ -312,6 +319,7 @@ void init(dt_view_t *self)
   darktable.view_manager->proxy.lighttable.get_position = _get_position;
   darktable.view_manager->proxy.lighttable.get_images_in_row = _get_images_in_row;
   darktable.view_manager->proxy.lighttable.get_full_preview_id = _get_full_preview_id;
+  darktable.view_manager->proxy.lighttable.get_one_image_seen_id = _get_one_image_seen_id;
   darktable.view_manager->proxy.lighttable.view = self;
 
   lib->select_offset_x = lib->select_offset_y = 0.5f;
@@ -327,6 +335,7 @@ void init(dt_view_t *self)
   lib->full_preview = 0;
   lib->full_preview_id = -1;
   lib->last_mouse_over_id = -1;
+  lib->one_image_seen_id = -1;
 
   GtkStyle *style = gtk_rc_get_style_by_paths(gtk_settings_get_default(), "dt-stars", NULL, GTK_TYPE_NONE);
 
@@ -552,6 +561,7 @@ end_query_cache:
         cairo_save(cr);
         // if(iir == 1) dt_image_prefetch(image, DT_IMAGE_MIPF);
         dt_view_image_expose(&(lib->image_over), id, cr, wd, iir == 1 ? height : ht, iir, img_pointerx, img_pointery, FALSE);
+        if(iir == 1) lib->one_image_seen_id = id;
 
         cairo_restore(cr);
       }
@@ -973,6 +983,8 @@ expose_zoomable (dt_view_t *self, cairo_t *cr, int32_t width, int32_t height, in
         cairo_save(cr);
         // if(zoom == 1) dt_image_prefetch(image, DT_IMAGE_MIPF);
         dt_view_image_expose(&(lib->image_over), id, cr, wd, zoom == 1 ? height : ht, zoom, img_pointerx, img_pointery, FALSE);
+        if(zoom == 1) lib->one_image_seen_id = id;
+
         cairo_restore(cr);
       }
       else goto failure;
@@ -1090,6 +1102,7 @@ void expose(dt_view_t *self, cairo_t *cr, int32_t width, int32_t height, int32_t
   if( lib->full_preview_id!=-1 )
   {
     expose_full_preview(self, cr, width, height, pointerx, pointery);
+    lib->one_image_seen_id = lib->full_preview_id;
   }
   else // we do pass on expose to manager or zoomable
   {

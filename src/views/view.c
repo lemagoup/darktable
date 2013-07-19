@@ -645,7 +645,11 @@ dt_view_get_image_to_act_on()
   //   in which case it affects the whole selection.
   // - if the mouse is outside the center view (or no image hovered over otherwise)
   //   it only affects the selection.
+  // - if zoom == 1 or full preview key pressed (z), current displayed image is the one.
   int32_t mouse_over_id = -1;
+  int32_t only_one_image_seen_id = darktable.view_manager->proxy.lighttable.get_one_image_seen_id
+            (darktable.view_manager->proxy.lighttable.view);
+
   int zoom = darktable.view_manager->proxy.lighttable.get_images_in_row 
             (darktable.view_manager->proxy.lighttable.view);
   
@@ -655,9 +659,9 @@ dt_view_get_image_to_act_on()
 
   DT_CTL_GET_GLOBAL(mouse_over_id, lib_image_mouse_over_id);
 
-  if(zoom == 1 || full_preview_id > 1)
+  if(zoom == 1 || full_preview_id > -1)
   {
-    return mouse_over_id;
+    return only_one_image_seen_id;
   }
   else
   {

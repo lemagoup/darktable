@@ -209,6 +209,7 @@ typedef struct dt_view_manager_t
       uint32_t (*get_position)(struct dt_view_t *view);
       int (*get_images_in_row)(struct dt_view_t *view);
       int (*get_full_preview_id)(struct dt_view_t *view);
+      int (*get_one_image_seen_id)(struct dt_view_t *view);
     } lighttable;
 
     /* tethering view proxy object */
